@@ -1,0 +1,44 @@
+34834 vertices read.
+69451 faces read.
+Initializing Data Structures...
+Time to init data structures: 3
+Computing initial quadrics...
+Time to initialize quadrics: 21
+Computing edges...
+Init edges.
+Time to init edges: 33
+No. of edges: 104288
+Target vertex count: 1742
+Initializing Uniform Grid...
+No. of cells: 8000
+************ 
+Time to initialize uniform grid: 151
+[0;32mGrid: 20[0m
+Initializing Uniform Grid...
+No. of cells: 1000
+************ 
+Time to initialize uniform grid: 34
+[0;32mGrid: 10[0m
+Initializing Uniform Grid...
+No. of cells: 125
+************ 
+Time to initialize uniform grid: 18
+[0;32mGrid: 5[0m
+Initializing Uniform Grid...
+No. of cells: 8
+************ 
+Time to initialize uniform grid: 16
+[0;32mGrid: 2[0m
+Initializing Uniform Grid...
+No. of cells: 1
+************ 
+Time to initialize uniform grid: 11
+[0;32mGrid: 1[0m
+Time updating queue: 38 ms
+	->Time sorting: 36 ms
+Time collapsing: 50 ms
+Time simplifying (total): 440 ms
+EdgesDroped: 133017
+Writing output to bunny95_GPU.off
+Output: 1742 vertices - 3439 faces.
+[0m
