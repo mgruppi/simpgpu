@@ -13,6 +13,7 @@
 #define environmentArgumentList d_vertices, d_n_vertices, d_vertex_removed, d_quadrics, d_faces, d_vert_face_header, d_vert_face_data, d_face_removed, d_edges, d_edge_cost, d_edge_queue, d_vert_edge_from_header, d_vert_edge_from_data, d_vert_edge_to_header, d_vert_edge_to_data, d_edge_removed, d_n_cells, d_vertex_in_cell, d_initial_vertices, d_cell_vertices, d_cell_vertices_size, d_cell_heap, d_cell_heap_size, d_n_edges, d_n_faces
 
 void initDeviceEnvironment(hostList, environmentReferenceList);
+void pullFromDevice(hostList, environmentReferenceList);
 
 
 #endif

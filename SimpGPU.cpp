@@ -10,14 +10,15 @@ long time_simplify = 0;
 long time_sorting = 0;
 long time_updating_queue = 0;
 long time_init_device = 0;
+long time_total_init_grid = 0;
 
 //get position from header array
 //Size of each structure on arrays
 const int HEADER_SIZE = 3;
 const int FACE_SIZE = 3;
 const int VERTEX_SIZE = 3;
-const int FACE_DATA_BATCH_SIZE = 50;
-const int EDGE_DATA_BATCH_SIZE = 50;
+const int FACE_DATA_BATCH_SIZE = 500;
+const int EDGE_DATA_BATCH_SIZE = 500;
 const int QUADRIC_SIZE = 16; //Quadric for a vertex is a 4x4 matrix
 const int EDGE_SIZE = 2;
 
@@ -475,17 +476,17 @@ void SimpGPU::initUniformGrid()
   // cerr << "aki2" << endl;
 
 
-  int* h_array = new int[100];
-  int* d_a;
-
-
-  cerr << "************ ";
-  for(int i = 0 ; i < 100; ++i)
-  {
-    h_array[i] = i;
-    //cerr << h_array[i] << " ";
-  }
-  cerr << endl;
+  // int* h_array = new int[100];
+  // int* d_a;
+  //
+  //
+  // cerr << "************ ";
+  // for(int i = 0 ; i < 100; ++i)
+  // {
+  //   h_array[i] = i;
+  //   //cerr << h_array[i] << " ";
+  // }
+  // cerr << endl;
   //allocate(h_array, d_a);
 
   // for(int i = 0; i < 100; ++i)
@@ -501,7 +502,7 @@ void SimpGPU::initUniformGrid()
   gettime(tu1);
   tu = diff(tu0,tu1);
   cerr << "Time to initialize uniform grid: " << getMilliseconds(tu) << endl;
-
+  time_total_init_grid+=getNanoseconds(tu);
 
 
 }
@@ -865,57 +866,6 @@ void SimpGPU::simplify(int goal, int gridres=1)
           continue;
         }
         if(edge.cost != h_edge_cost[edge.id]) { dropHeap++; continue;}
-
-
-        /*Felippe
-        std::sort(edge_in_cell[i].begin(),edge_in_cell[i].end(),compareEdges);
-        while(h_edge_removed[edge_in_cell[i].back()]) {
-          edge_in_cell[i].pop_back();
-        }
-        cout << "Lesser cost edge: " << edge_in_cell[i].back() << endl;
-        if(h_edge_removed[edge_in_cell[i].back()])
-          cout << "Lesser Cost Edge already removed!!!!!!!!!!!!!!!" << endl;
-        cout << "Heap top: " << edge.id << endl;
-        if(h_edge_removed[edge.id])
-          cout << "Heap Top Edge already removed!!!!!!!!!!!!!!!" << endl;
-        cout << "Elem Cost: " << edge.cost << " - Current Cost: " << h_edge_cost[edge.id] << endl;
-
-        if(edge_in_cell[i].back() != edge.id) {
-          if( h_edge_cost[edge_in_cell[i].back()] != edge.cost)
-            cout << "Houston!! We have a problem" << endl;
-          for(int it = edge_in_cell[i].size()-1; it >= 0;it--)
-            if(edge_in_cell[i][it] == edge.id) {
-              cout << "Edge found at posstion: " << it << " WTF??" << endl;
-              cout << "Costs: Top Queue(" << h_edge_cost[edge_in_cell[i].back()] << ") - Top Heap Current(" << h_edge_cost[edge.id] << ")" <<endl;
-            }
-        }
-        */
-
-
-        //cerr << "eid " << eid << endl;
-
-        //int queue_it = h_cell_queue_size[i]-1;
-        //cerr << "cell " << i << " queue_it " << queue_it << endl;
-        //Last position should contain the least cost edge
-        //int eid = h_cell_queue[i*n_edges+queue_it];
-        //h_cell_queue_size[i]--;
-
-        // int edgetop = -1; //pop(h_cell_queue.data()+getHeapHead(i), h_cell_heap_size[i]);
-        // while(edgetop<0 && h_cell_heap_size[i] > 0)
-        // {
-        //   edgetop = pop(h_cell_heap.data()+getHeapHead(i), h_cell_heap_size[i]);
-        //   if(h_edge_removed[edgetop])
-        //   {
-        //     edgetop = -1;
-        //   }
-        // }
-        //
-        // cerr << "queue " << eid << " - " << h_edge_cost[eid] << endl;
-        // cerr << "heap " << edgetop << " - " << h_edge_cost[edgetop] << endl;
-        // if(h_edge_cost[eid] - h_edge_cost[edgetop] != 0) cerr << "***>>> Diff cost\n";
-
-
-
         //cin.get();
         timespec t, t0, t1;
         gettime(t0);
@@ -951,6 +901,8 @@ void SimpGPU::simplify(int goal, int gridres=1)
   ts = diff(ts0,ts1);
 
   time_simplify+=getNanoseconds(ts);
+
+  pullFromDevice(hostArgumentList, environmentArgumentList);
 
   printTimes();
 
@@ -1223,9 +1175,12 @@ void SimpGPU::updateSurface()
 
 void printTimes()
 {
+  cerr << "-----TIMES-----\n";
   cerr << "Time updating queue: " << time_updating_queue/1000000 << " ms\n";
   cerr << "\t->Updating heap: " << time_sorting/1000000 << " ms\n";
   cerr << "Time init device: " << time_init_device/1000000 << " ms\n";
+  cerr << "Total time init grid: " << time_total_init_grid/1000000 << " ms\n";
   cerr << "Time collapsing: " << time_collapse/1000000 << " ms\n";
   cerr << "Time simplifying (total): " << time_simplify/1000000 << " ms\n";
+  cerr << "---------------\n";
 }

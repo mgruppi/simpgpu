@@ -1,4 +1,5 @@
 #include "kernel.cuh"
+#include <iostream>
 
 //get position from header array
 //Size of each structure on arrays
@@ -383,8 +384,25 @@ void initDeviceEnvironment(hostList,environmentReferenceList)
   cudaMalloc(&d_cell_heap_size, size);
   cudaMemcpy(d_cell_heap_size, h_cell_heap_size, size, cudaMemcpyHostToDevice);
 
-
   initDevice<<<1,1>>>(environmentArgumentList);
+}
+
+void pullFromDevice(hostList, environmentReferenceList)
+{
+  int size = FACE_SIZE*h_n_faces*sizeof(int);
+  cudaMemcpy(h_faces, d_faces, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_faces*sizeof(bool);
+  cudaMemcpy(h_face_removed, d_face_removed, size, cudaMemcpyDeviceToHost);
+
+  size = VERTEX_SIZE*h_n_vertices*sizeof(double);
+  cudaMemcpy(h_vertices, d_vertices, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_vertices*sizeof(bool);
+  cudaMemcpy(h_vertex_removed, d_vertex_removed, size, cudaMemcpyDeviceToHost);
+
+  size = HEADER_SIZE*h_n_vertices*sizeof(int);
+  cudaMemcpy(h_vert_face_header, d_vert_face_header, size, cudaMemcpyDeviceToHost);
 
 }
 
