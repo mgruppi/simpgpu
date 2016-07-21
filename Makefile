@@ -1,5 +1,5 @@
 Simplify: Simp.o Surface.o SimpVertexClustering.o SimpELEN.o SimpQEM.o Classes.h common.o SimpGPU.o
-	nvcc -O3 -std=c++11 -Xcompiler -fopenmp  Simp.o common.o kernel.o SimpQEM.o SimpELEN.o SimpGPU.o SimpVertexClustering.o Surface.o Vector3f.o -o Simplify -lCGAL
+	nvcc -O3 -arch=sm_35 -rdc=true -std=c++11 -Xcompiler -fopenmp  Simp.o common.o kernel.o SimpQEM.o SimpELEN.o SimpGPU.o SimpVertexClustering.o Surface.o Vector3f.o -o Simplify -lcudadevrt -lCGAL
 
 Simp.o: Surface.o Simp.cpp
 	g++ -O3 -std=c++11 -c Simp.cpp
@@ -22,8 +22,8 @@ Vector3f.o: Vector3f.h Vector3f.cpp
 SimpGPU.o: SimpGPU.h SimpGPU.cpp Surface.h kernel.o
 	nvcc -O3 -std=c++11 -c SimpGPU.cpp
 
-kernel.o: kernel.cuh kernel.cu
-	nvcc -O3 -std=c++11 -c kernel.cu
+kernel.o: kernel.cuh kernel.cu cuPrintf.o
+	nvcc -O3 -arch=sm_35 -dc kernel.cu
 
 common.o: common.h common.cpp
 	g++ -O3 -std=c++11 -c common.cpp
