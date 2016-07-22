@@ -22,6 +22,7 @@ struct elem {
 void initDeviceEnvironment(hostList, environmentReferenceList);
 void pullFromDevice(hostList, environmentReferenceList);
 void initializeUniformGrid();
+void simplifyCells(int);
 
 
 

@@ -22,7 +22,7 @@ Vector3f.o: Vector3f.h Vector3f.cpp
 SimpGPU.o: SimpGPU.h SimpGPU.cpp Surface.h kernel.o
 	nvcc -O3 -std=c++11 -c SimpGPU.cpp
 
-kernel.o: kernel.cuh kernel.cu cuPrintf.o
+kernel.o: kernel.cuh kernel.cu
 	nvcc -O3 -arch=sm_35 -dc kernel.cu
 
 common.o: common.h common.cpp

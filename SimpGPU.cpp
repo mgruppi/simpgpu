@@ -17,8 +17,8 @@ long time_total_init_grid = 0;
 const int HEADER_SIZE = 3;
 const int FACE_SIZE = 3;
 const int VERTEX_SIZE = 3;
-const int FACE_DATA_BATCH_SIZE = 500;
-const int EDGE_DATA_BATCH_SIZE = 500;
+const int FACE_DATA_BATCH_SIZE = 50;
+const int EDGE_DATA_BATCH_SIZE = 50;
 const int QUADRIC_SIZE = 16; //Quadric for a vertex is a 4x4 matrix
 const int EDGE_SIZE = 2;
 
@@ -863,13 +863,15 @@ void SimpGPU::simplify(int goal, int gridres=1)
   tdev = diff(tdev0,tdev1);
   time_init_device += getNanoseconds(tdev);
 
-  while(vertices_removed < goal)
+  //while(vertices_removed < goal)
   {
     cerr << "Initializing Uniform Grid...\n";
     initUniformGrid();
 
     //GPU
     initializeUniformGrid();
+
+    simplifyCells(h_n_cells);
 
     cerr << greentty << "Grid: " << h_grid_res << deftty << endl;
 
@@ -922,6 +924,40 @@ void SimpGPU::simplify(int goal, int gridres=1)
       }
     }
     if(h_grid_res>=2) h_grid_res/=2;
+    pullFromDevice(hostArgumentList, environmentArgumentList);
+
+
+    //DEBUG PRINT
+    for(int i = 0; i < h_n_cells; i++) {
+    cerr << "Cell " << i << " - HeapHead: " << getHeapHead(i) << " - HeapSize: " << getCellHeapSize(i) << " - MaxSize: " << getCellMaxHeapSize(i) << endl;
+    cerr << "vertices " << h_cell_vertices_size[i] << endl;
+
+      // for(int j = getHeapHead(i); j < getHeapHead(i)+getCellHeapSize(i); ++j)
+      // {
+      //   cerr << "(" <<  h_cell_heap_data[j].id << "," << h_cell_heap_data[j].cost<<") ";
+      // }
+      // cerr << endl;
+      // for(int j = 0; j < h_cell_vertices_size[i]; ++j)
+      // {
+      //   cerr << getCellVertexId(i,j) << " ";
+      // }
+      // cerr << endl;
+      // cerr << "\nEdge from: ";
+      // for(int i = 0; i < 100; ++i)
+      // {
+      //   cerr << h_vert_edge_from_data[i] << " ";
+      // }
+      // cerr << endl;
+    }
+    // cerr << "edge costs: ";
+    // for(int i = 0; i < h_n_edges; ++i)
+    // {
+    //   cerr << h_edge_cost[i] << endl;
+    // }
+    // cerr << endl;
+
+
+
   }
   gettime(ts1);
 
@@ -929,7 +965,7 @@ void SimpGPU::simplify(int goal, int gridres=1)
 
   time_simplify+=getNanoseconds(ts);
 
-  pullFromDevice(hostArgumentList, environmentArgumentList);
+
 
   printTimes();
 

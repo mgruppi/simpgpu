@@ -238,7 +238,7 @@ __device__ bool d_isCrownInCell(int vid)
 }
 
 
-__global__ void computeGridEdges()
+__global__ void kernel_computeGridEdges()
 {
 
   int i = threadIdx.x;
@@ -251,15 +251,16 @@ __global__ void computeGridEdges()
     for(int k = 0; k < getEdgeFromCurrSize(getCellVertexId(i,j)); ++k)
     {
 
-      int vid = getCellVertexId(i,j);
+      //int vid = getCellVertexId(i,j);
       //int eid = getEdgeFromDataId(getCellVertexId(i,j),k);
+      int vid = cell_vertices[i*n_vertices+j];
       int eid = vert_edge_from_data[EDGE_DATA_BATCH_SIZE*vid+k];
 
       if(d_isEntirelyInCell(eid) && d_isCrownInCell(getEdgeVertexId(eid,0)) && d_isCrownInCell(getEdgeVertexId(eid,1)))
       {
 
         elem temp = {eid,edge_cost[eid]};
-        //d_insert(temp, cell_heap_data+getHeapHead(i), getCellHeapSize(i));
+        d_insert(temp, cell_heap_data+getHeapHead(i), getCellHeapSize(i));
       }
 
     }
@@ -269,7 +270,7 @@ __global__ void computeGridEdges()
 
 }
 
-__global__ void initUniformGrid()
+__global__ void kernel_initUniformGrid()
 {
 
   printf("grid_res %d\n", grid_res);
@@ -290,6 +291,7 @@ __global__ void initUniformGrid()
 
     getHeapHead(i) = 0;
     getCellHeapSize(i) = 0;
+
   }
 
   for(int i = 0; i < n_vertices; ++i)
@@ -318,6 +320,8 @@ __global__ void initUniformGrid()
     getCellHeapSize(i) = 0;
     getCellMaxHeapSize(i) = HEAP_SIZE_VERTEX_RATIO*initial_vertices[i];
 
+    //getHeapHead(i) = HEAP_SIZE_VERTEX_RATIO*i;
+
     if(i!=0){
       getHeapHead(i) = getHeapHead(i-1) + getCellMaxHeapSize(i-1)+1;
 
@@ -328,7 +332,35 @@ __global__ void initUniformGrid()
   }
 
   //Calculate edges for each cell separately
-  computeGridEdges<<<1,n_cells>>>();
+  kernel_computeGridEdges<<<1,n_cells>>>();
+
+}
+
+__device__ void d_collapse(int eid)
+{
+
+}
+
+__global__ void kernel_simplifyCell()
+{
+
+  //Cell id
+  int i = threadIdx.x;
+
+  int vr = 0; //Vertices removed in this cell
+
+  while(vr < initial_vertices[i]/grid_res && getCellHeapSize(i) > 0)
+  {
+    elem edge = d_pop(cell_heap_data+getHeapHead(i), getCellHeapSize(i));
+    if(edge_removed[edge.id])
+    {
+      continue;
+    }
+    if(edge.cost != edge_cost[edge.id]) continue;
+
+    d_collapse(edge.id);
+
+  }
 
 }
 
@@ -494,12 +526,39 @@ void pullFromDevice(hostList, environmentReferenceList)
 
   size = HEADER_SIZE*h_n_vertices*sizeof(int);
   cudaMemcpy(h_vert_face_header, d_vert_face_header, size, cudaMemcpyDeviceToHost);
+
+  //DEBUG PULL UNIFORM GRID HEAP
+  size = h_n_cells*(HEADER_SIZE)*sizeof(int);
+  cudaMemcpy(h_cell_heap_header, d_cell_heap_header, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_vertices*sizeof(elem)*HEAP_SIZE_VERTEX_RATIO;
+  cudaMemcpy(h_cell_heap_data, d_cell_heap_data, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_vertices*sizeof(int);
+  cudaMemcpy(h_cell_vertices_size, d_cell_vertices_size, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_vertices*h_n_cells*sizeof(int);
+  cudaMemcpy(h_cell_vertices, d_cell_vertices, size, cudaMemcpyDeviceToHost);
+
+  size = h_n_edges * sizeof(double);
+  cudaMemcpy(h_edge_cost, d_edge_cost, size, cudaMemcpyDeviceToHost);
+
+  size = EDGE_DATA_BATCH_SIZE*h_n_vertices*sizeof(int);
+  cudaMemcpy(h_vert_edge_from_data, d_vert_edge_from_data, size, cudaMemcpyDeviceToHost);
+
 }
 
 void initializeUniformGrid()
 {
   std::cerr << "Initializing uniform grid (device)...\n";
-  initUniformGrid<<<1,1>>>();
+  kernel_initUniformGrid<<<1,1>>>();
+  cudaDeviceSynchronize();
+}
+
+void simplifyCells(int h_n_cells)
+{
+  std::cerr << "Simplifying cells...\n";
+  kernel_simplifyCell<<<1,h_n_cells>>>();
   cudaDeviceSynchronize();
 }
 
